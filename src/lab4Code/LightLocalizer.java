@@ -4,7 +4,7 @@ import lejos.robotics.SampleProvider;
 
 public class LightLocalizer {
 	//Constants
-	private static final double LS_DIST = -7.5;
+	private static final double LS_DIST = 12.5;
 	private static final double upperLight = 0.45;
 	private static final double lowerLight = 0.4;
 	public static int ROTATION_SPEED = 30;
@@ -24,7 +24,7 @@ public class LightLocalizer {
 	public void doLocalization() {
 		// Drive to the localization location (close to (0,0))
 		navigator.turnTo(45.0, true);
-		navigator.goForward(18.0);
+		navigator.goForward(10.0);
 		
 		/*
 		 * Track the angles using an array
@@ -67,19 +67,29 @@ public class LightLocalizer {
 		
 		//Compute the offset of the x distance
 		double thetaX = Math.abs(lineAngles[0] - lineAngles[2]);
+		if(thetaX > 180.0) {
+			thetaX = 360.0 - thetaX;
+		}
 		double correctX = -LS_DIST * Math.cos(Math.toRadians(thetaX / 2.0));
-
+		
 		//Compute the offset of the y distance
 		double thetaY = Math.abs(lineAngles[1] - lineAngles[3]);
+		if(thetaY > 180.0) {
+			thetaY = 360.0 - thetaX;
+		}
 		double correctY = -LS_DIST * Math.cos(Math.toRadians(thetaY / 2.0));
 
 		//Correct Theta
-		double deltaTheta = 270 + (thetaY/2.0) - lineAngles[3];
+		double deltaTheta = 270 + (thetaX/2.0) - lineAngles[0];
 		double correctTheta = odo.getAng() + deltaTheta;
+		if (correctTheta > 180.0) {
+			correctTheta -= 180.0;
+		}
 		
 		//Set the odometer to the corrected position 
 		odo.setPosition(new double[] { correctX, correctY, correctTheta }, new boolean[] { true, true, true });
 		
+		lejos.utility.Delay.msDelay(1000);
 		// when done travel to (0,0) and turn to 0 degrees
 		navigator.travelTo(0.0, 0.0);
 		navigator.turnTo(0.0, true);

@@ -2,6 +2,7 @@ package lab4Code;
 
 import lejos.hardware.*;
 import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.*;
@@ -17,8 +18,8 @@ public class Lab4 {
 	private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
 	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
 	private static final Port usPort = LocalEV3.get().getPort("S1");		
-	private static final Port colorPort = LocalEV3.get().getPort("S2");		
-
+	private static final Port colorPort = LocalEV3.get().getPort("S2");
+	private static TextLCD LCD = LocalEV3.get().getTextLCD();
 	
 	public static void main(String[] args) {
 		
@@ -41,15 +42,37 @@ public class Lab4 {
 		SampleProvider colorValue = colorSensor.getMode("Red");			// colorValue provides samples from this instance
 		float[] colorData = new float[colorValue.sampleSize()];			// colorData is the buffer in which data are returned
 				
+		//Select the edge type
+		int buttonChoice;
+		do
+		{
+			LCD.clear();
+
+			LCD.drawString("<  Left  | Right  > ", 0, 0);
+			LCD.drawString("         |          ", 0, 1);
+			LCD.drawString(" Falling | Rising ", 0, 2);
+			LCD.drawString("  Edge   | Edge   ", 0, 3);
+
+			buttonChoice = Button.waitForAnyPress();
+		} while (buttonChoice != Button.ID_LEFT 
+				&& buttonChoice != Button.ID_RIGHT);
+		USLocalizer.LocalizationType locType; 
+
+		if (buttonChoice == Button.ID_LEFT)
+		{ 
+			locType = USLocalizer.LocalizationType.FALLING_EDGE;
+		} else {
+			locType = USLocalizer.LocalizationType.RISING_EDGE;
+		}
+		
 		// setup the odometer and display
 		Odometer odo = new Odometer(leftMotor, rightMotor, 30, true);
 		LCDInfo lcd = new LCDInfo(odo);
 		
 		//Setup the Navigator
 		Navigation navigator = new Navigation(odo);
-		
 		// perform the ultrasonic localization
-		USLocalizer usl = new USLocalizer(odo, usValue, usData, USLocalizer.LocalizationType.FALLING_EDGE,navigator);
+		USLocalizer usl = new USLocalizer(odo, usValue, usData, locType,navigator);
 		usl.doLocalization();
 		
 		//Orient the robot to the 0 axis and set the odometer
@@ -63,7 +86,7 @@ public class Lab4 {
 		
 		
 		while (Button.waitForAnyPress() != Button.ID_ESCAPE);
-		System.exit(0);	
+		System.exit(0);
 		
 	}
 
